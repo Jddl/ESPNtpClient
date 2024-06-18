@@ -1011,7 +1011,7 @@ bool NTPClient::checkNTPresponse (NTPPacket_t* ntpPacket, int64_t offsetUs) {
         return false;
     }
     
-    if (ntpPacket->flags.vers != 4) {
+    if (ntpPacket->flags.vers != 4 && ntpPacket->flags.vers != 3) {
         DEBUGLOGE ("NTP version error: %d", ntpPacket->flags.vers);
         return false;
     }

@@ -1038,7 +1038,8 @@ bool NTPClient::checkNTPresponse (NTPPacket_t* ntpPacket, int64_t offsetUs) {
         //Serial.printf ("Offset:            %0.6f s\n", offsetUs / 1000000.0);
         if (ntpPacket->dispersion > abs (offsetUs / 1000000.0) || ntpPacket->dispersion == 0.0) {
             DEBUGLOGE ("Dispersion error: %0.3f ms > Offset: %0.3f ms", ntpPacket->dispersion * 1000.0, (float)(offsetUs / 1000.0));
-            return false;
+            // for local server no check root dispersion
+            //return false;
         }
     }
 

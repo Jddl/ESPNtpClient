@@ -285,6 +285,8 @@ protected:
     pbuf* lastNtpResponsePacket;    ///< @brief Last response packet to be processed by receiver task
     bool responsePacketValid = false;                           ///< @brief Is `lastNtpResponsePacket` already processed?
     
+
+    bool is_pase = false; //是否暂停
     /**
       * @brief Gets time from NTP server and convert it to Unix time format
       * @param arg `NTPClient` instance
@@ -406,6 +408,16 @@ public:
 #endif // ESP8266
     }
     
+    // 暂停同步
+    void pause(){
+      is_pase = true;
+    }
+
+    // 恢复同步
+    void resume(){
+      is_pase = false;
+    }
+
     /**
       * @brief Starts a NTP time request to server. Only called from library, normally.
       * 

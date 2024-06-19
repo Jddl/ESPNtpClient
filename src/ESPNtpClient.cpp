@@ -524,7 +524,7 @@ void NTPClient::s_getTimeloop (void* arg) {
 #endif // ESP32
         //DEBUGLOGI ("Running periodic task");
         static time_t lastGotTime;
-        if (::millis () - lastGotTime >= self->actualInterval) {
+        if (::millis () - lastGotTime >= self->actualInterval && !self->is_pase) {
             lastGotTime = ::millis ();
             DEBUGLOGI ("Periodic loop. Millis = %d", lastGotTime);
             if (self->isConnected) {

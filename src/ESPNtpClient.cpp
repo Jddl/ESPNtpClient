@@ -237,7 +237,7 @@ bool NTPClient::begin (const char* ntpServerName, bool manageWifi) {
         xTaskCreateUniversal (
             &NTPClient::s_getTimeloop, /* Task function. */
             "NTP loop", /* name of task. */
-            2048, /* Stack size of task */
+            4096, /* Stack size of task */
             this, /* parameter of the task */
             1, /* priority of the task */
             &loopHandle, /* Task handle to keep track of created task */

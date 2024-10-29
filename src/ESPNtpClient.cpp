@@ -309,7 +309,8 @@ void NTPClient::processPacket (struct pbuf* packet) {
     }
     if (!checkDelaySymmetrical(&ntpPacket))
     {
-        DEBUGLOGE("Delay is not symmetrical");
+        actualInterval = 1000;
+        DEBUGLOGE("Delay is not symmetrical interval: %d",actualInterval);
         return;
     }
     timeval tvOffset = calculateOffset (&ntpPacket);
@@ -529,8 +530,18 @@ void NTPClient::s_getTimeloop (void* arg) {
 #endif // ESP32
         //DEBUGLOGI ("Running periodic task");
         static time_t lastGotTime;
+        static bool lastPase = false;
+        if (lastPase != self->is_pase) {
+            lastPase = self->is_pase;
+            if (!lastPase)
+            {
+                self->actualInterval = 0;
+                DEBUGLOGE ("resume %d,%d",::millis () - lastGotTime,self->actualInterval );
+            }
+        }
         if (::millis () - lastGotTime >= self->actualInterval && !self->is_pase) {
             lastGotTime = ::millis ();
+            DEBUGLOGE ("resume ok");
             DEBUGLOGI ("Periodic loop. Millis = %d", lastGotTime);
             if (self->isConnected) {
                 if (WiFi.isConnected ()) {

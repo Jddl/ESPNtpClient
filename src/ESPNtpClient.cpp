@@ -307,6 +307,11 @@ void NTPClient::processPacket (struct pbuf* packet) {
         DEBUGLOGE ("Null pointer packet");
         return;
     }
+    if (!checkDelaySymmetrical(&ntpPacket))
+    {
+        DEBUGLOGE("Delay is not symmetrical");
+        return;
+    }
     timeval tvOffset = calculateOffset (&ntpPacket);
     
     int64_t offset_us = (int64_t)tvOffset.tv_sec * 1000000L + (int64_t)tvOffset.tv_usec;
@@ -1074,6 +1079,31 @@ timeval NTPClient::calculateOffset (NTPPacket_t* ntpPacket) {
     DEBUGLOGI ("Calculated offset %f sec. Delay %f ms", offset, delay * 1000);
 
     return tv_offset;
+}
+
+bool NTPClient::checkDelaySymmetrical(NTPPacket_t *ntpPacket)
+{
+    double t1, t2, t3, t4;
+
+    t1 = ntpPacket->origin.tv_sec + ntpPacket->origin.tv_usec / 1000000.0;
+    t2 = ntpPacket->receive.tv_sec + ntpPacket->receive.tv_usec / 1000000.0;
+    t3 = ntpPacket->transmit.tv_sec + ntpPacket->transmit.tv_usec / 1000000.0;
+    t4 = ntpPacket->destination.tv_sec + ntpPacket->destination.tv_usec / 1000000.0;
+
+    double delay1 = t2 - t1;
+    double delay2 = t4 - t3;
+    delay = (t4 - t1) - (t3 - t2);  
+    DEBUGLOGE("delay: %f,delay1: %f delay2: %f",  delay, delay1, delay2);
+
+    // 延迟在10ms之内，认为是网络正常 
+    if (delay < 0.01 || delay > 100)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool NTPClient::adjustOffset (timeval* offset) {

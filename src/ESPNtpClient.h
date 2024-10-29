@@ -51,7 +51,7 @@ constexpr auto DEAULT_NUM_TIMEOUTS = 3; ///< @brief After this number of timeout
 constexpr auto ESP8266_LOOP_TASK_INTERVAL = 500; ///< @brief Loop task period on ESP8266
 constexpr auto ESP8266_RECEIVER_TASK_INTERVAL = 100; ///< @brief Receiver task period on ESP8266
 #endif // ESP8266
-constexpr auto DEFAULT_TIME_SYNC_THRESHOLD = 2500; ///< @brief If calculated offset is less than this in us clock will not be corrected
+constexpr auto DEFAULT_TIME_SYNC_THRESHOLD = 5000; ///< @brief If calculated offset is less than this in us clock will not be corrected
 constexpr auto DEFAULT_NUM_OFFSET_AVE_ROUNDS = 1; ///< @brief Number of NTP request and response rounds to calculate offset average
 constexpr auto MAX_OFFSET_AVERAGE_ROUNDS = 5; ///< @brief Maximum number of NTP request for offset average calculation
 
@@ -362,6 +362,13 @@ protected:
       * @return Time offset in `timeval` format
       */
     timeval calculateOffset (NTPPacket_t* ntpPacket);
+
+    /**
+     * @brief Check if delay is symmetrical
+     * @param ntpPacket NTP response packet structure
+     * @return `true` if delay is symmetrical
+     */
+    bool checkDelaySymmetrical(NTPPacket_t *ntpPacket);
     
     /**
       * @brief Applies offset to system clock

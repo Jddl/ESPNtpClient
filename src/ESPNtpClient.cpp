@@ -535,7 +535,7 @@ void NTPClient::s_getTimeloop (void* arg) {
             lastPase = self->is_pase;
             if (!lastPase)
             {
-                self->actualInterval = 0;
+                self->actualInterval = self->shortInterval;
                 DEBUGLOGE ("lastGotTime offest %d",(lastGotTime));
                 DEBUGLOGE ("actualInterval %d",self->actualInterval);
             }

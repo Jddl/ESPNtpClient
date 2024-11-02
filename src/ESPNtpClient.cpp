@@ -309,6 +309,7 @@ void NTPClient::processPacket (struct pbuf* packet) {
     }
     if (!checkDelaySymmetrical(&ntpPacket))
     {
+        actualInterval = 1000;
         DEBUGLOGE("Delay is not symmetrical");
         return;
     }
@@ -1095,8 +1096,8 @@ bool NTPClient::checkDelaySymmetrical(NTPPacket_t *ntpPacket)
     delay = (t4 - t1) - (t3 - t2);  
     DEBUGLOGE("delay: %f,delay1: %f delay2: %f",  delay, delay1, delay2);
 
-    // 延迟在10ms之内，认为是网络正常 
-    if (delay < 0.01 || delay > 100)
+    // 延迟在50ms之内，认为是网络正常 
+    if ((delay < 0.05 || delay > 100) || abs(delay1) > 100)
     {
         return true;
     }

@@ -422,7 +422,6 @@ public:
 
     // 恢复同步
     void resume(){
-      actualInterval = 0;
       is_pase = false;
     }
 

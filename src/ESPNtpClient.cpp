@@ -536,12 +536,12 @@ void NTPClient::s_getTimeloop (void* arg) {
             if (!lastPase)
             {
                 self->actualInterval = 0;
-                DEBUGLOGE ("resume %d,%d",::millis () - lastGotTime,self->actualInterval );
+                DEBUGLOGE ("lastGotTime offest %d",(lastGotTime));
+                DEBUGLOGE ("actualInterval %d",self->actualInterval);
             }
         }
         if (::millis () - lastGotTime >= self->actualInterval && !self->is_pase) {
             lastGotTime = ::millis ();
-            DEBUGLOGE ("resume ok");
             DEBUGLOGI ("Periodic loop. Millis = %d", lastGotTime);
             if (self->isConnected) {
                 if (WiFi.isConnected ()) {
@@ -1107,7 +1107,7 @@ bool NTPClient::checkDelaySymmetrical(NTPPacket_t *ntpPacket)
     DEBUGLOGE("delay: %f,delay1: %f delay2: %f",  delay, delay1, delay2);
 
     // 延迟在10ms之内，认为是网络正常 
-    if (delay < 0.01 || delay > 100)
+    if ((delay < 0.05 || delay > 100) || abs(delay1) > 100)
     {
         return true;
     }

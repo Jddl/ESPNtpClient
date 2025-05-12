@@ -47,6 +47,22 @@ const char* extractFileName (const char* path);
 #define DEBUGLOGV(...)
 #endif
 
+// https://github.com/espressif/arduino-esp32/issues/10526
+// https://github.com/espressif/arduino-esp32/pull/10415
+#ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING
+#define UDP_MUTEX_LOCK()                                \
+  if (!sys_thread_tcpip(LWIP_CORE_LOCK_QUERY_HOLDER)) { \
+    LOCK_TCPIP_CORE();                                  \
+  }
+
+#define UDP_MUTEX_UNLOCK()                             \
+  if (sys_thread_tcpip(LWIP_CORE_LOCK_QUERY_HOLDER)) { \
+    UNLOCK_TCPIP_CORE();                               \
+  }
+#else  // CONFIG_LWIP_TCPIP_CORE_LOCKING
+#define UDP_MUTEX_LOCK()
+#define UDP_MUTEX_UNLOCK()
+#endif  // CONFIG_LWIP_TCPIP_CORE_LOCKING
 
 #ifdef ESP8266
 const char* IRAM_ATTR extractFileName (const char* path) {
@@ -173,13 +189,17 @@ bool NTPClient::begin (const char* ntpServerName, bool manageWifi) {
 
     if (udp) {
         DEBUGLOGI ("Remove UDP connection");
+UDP_MUTEX_LOCK();
         udp_disconnect (udp);
         udp_remove (udp);
+UDP_MUTEX_UNLOCK();
         udp = NULL;
     }
     
-
+UDP_MUTEX_LOCK();
     udp = udp_new ();
+UDP_MUTEX_UNLOCK();
+    
     if (!udp) {
         DEBUGLOGE ("Failed to create NTP socket");
         return false;
@@ -196,6 +216,7 @@ bool NTPClient::begin (const char* ntpServerName, bool manageWifi) {
         localAddress.addr = WiFi.localIP ();
         DEBUGLOGI ("Bind UDP port %d to %s", DEFAULT_NTP_PORT, IPAddress (localAddress.addr).toString ().c_str ());
 #endif
+UDP_MUTEX_LOCK();
         result = udp_bind (udp, /*IP_ADDR_ANY*/ &localAddress, DEFAULT_NTP_PORT);
         if (result) {
             DEBUGLOGE ("Failed to bind to NTP port. %d: %s", result, lwip_strerr (result));
@@ -212,6 +233,7 @@ bool NTPClient::begin (const char* ntpServerName, bool manageWifi) {
         }
         
         udp_recv (udp, &NTPClient::s_recvPacket, this);
+UDP_MUTEX_UNLOCK();
     }
     lastSyncd.tv_sec = 0;
     lastSyncd.tv_usec = 0;
@@ -539,8 +561,10 @@ void NTPClient::s_getTimeloop (void* arg) {
                 } else {
                     DEBUGLOGE ("DISCONNECTED");
                     if (self->udp) {
+UDP_MUTEX_LOCK();
                         udp_disconnect (self->udp);
                         udp_remove (self->udp);
+UDP_MUTEX_UNLOCK();
                         self->udp = NULL;
                     }
                     self->isConnected = false;
@@ -549,12 +573,15 @@ void NTPClient::s_getTimeloop (void* arg) {
                 if (WiFi.isConnected ()) {
                     DEBUGLOGD ("CONNECTED. Binding");
                     if (self->udp) {
+UDP_MUTEX_LOCK();
                         udp_disconnect (self->udp);
                         udp_remove (self->udp);
+UDP_MUTEX_UNLOCK();
                         self->udp = NULL;
                     }
-
+UDP_MUTEX_LOCK();
                     self->udp = udp_new ();
+UDP_MUTEX_UNLOCK();
                     if (!self->udp) {
                         DEBUGLOGE ("Failed to create NTP socket");
                         return; // false;
@@ -567,6 +594,7 @@ void NTPClient::s_getTimeloop (void* arg) {
 #else // ESP8266
                     localAddress.addr = WiFi.localIP ();
 #endif // ESP32
+UDP_MUTEX_LOCK();
                     err_t result = udp_bind (self->udp, /*IP_ADDR_ANY*/ &localAddress, DEFAULT_NTP_PORT);
                     DEBUGLOGI ("Bind UDP port");
                     if (result) {
@@ -584,6 +612,7 @@ void NTPClient::s_getTimeloop (void* arg) {
                     }
 
                     udp_recv (self->udp, &NTPClient::s_recvPacket, self);
+UDP_MUTEX_UNLOCK();
                     self->getTime ();
                 }
             }
@@ -653,7 +682,9 @@ void NTPClient::getTime () {
     ntpAddr.addr = ntpServerIPAddress;
 #endif
     DEBUGLOGI ("NTP server IP address %s", ipaddr_ntoa (&ntpAddr));
+UDP_MUTEX_LOCK();
     result = udp_connect (udp, &ntpAddr, DEFAULT_NTP_PORT);
+UDP_MUTEX_UNLOCK();
     if (result == ERR_USE) {
         DEBUGLOGE ("Port already used");
         if (onSyncEvent) {
@@ -751,7 +782,9 @@ boolean NTPClient::sendNTPpacket () {
 
     DEBUGLOGI ("Sending packet");
     memcpy (buffer->payload, &packet, sizeof (NTPUndecodedPacket_t));
+UDP_MUTEX_LOCK();
     result = udp_send (udp, buffer);
+UDP_MUTEX_UNLOCK();
     if (buffer->ref > 0) {
 #ifdef ESP32
         DEBUGLOGV ("pbuff type: %d", buffer->type_internal);

@@ -28,6 +28,7 @@ extern "C" {
 #include "time.h"
 #include "lwip/udp.h"
 #include "lwip/ip_addr.h"
+#include "lwip/priv/tcpip_priv.h"
 }
 
 #ifdef ESP32
